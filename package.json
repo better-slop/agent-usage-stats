@@ -1,5 +1,5 @@
 {
-  "name": "agent-usage-stats",
+  "name": "@better-slop/aus",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -8,5 +8,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  }
+  },
+  "workspaces": [
+    "packages/*",
+    "packages/module/*"
+  ]
 }
