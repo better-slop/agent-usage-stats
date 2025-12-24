@@ -1,5 +1,5 @@
 {
-  "name": "@better-slop/aus",
+  "name": "agent-usage-stats",
   "module": "index.ts",
   "type": "module",
   "private": true,
