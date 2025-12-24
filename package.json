@@ -6,16 +6,17 @@
   "catalog": {
     "@types/bun": "latest",
     "typescript": "latest",
-    "tsgo": "latest",
+    "@typescript/native-preview": "latest",
     "yargs": "latest",
     "hono": "latest",
-    "opentui": "latest",
+    "@opentui/core": "latest",
+    "@opentui/solid": "latest",
     "solid-js": "latest"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "catalog:",
-    "tsgo": "catalog:"
+    "@typescript/native-preview": "catalog:"
   },
   "peerDependencies": {
     "typescript": "catalog:"

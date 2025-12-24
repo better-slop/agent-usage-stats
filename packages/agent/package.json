@@ -9,6 +9,6 @@
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "tsgo": "catalog:"
+    "@typescript/native-preview": "catalog:"
   }
 }

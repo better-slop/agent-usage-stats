@@ -9,11 +9,12 @@
   },
   "dependencies": {
     "yargs": "catalog:",
-    "opentui": "catalog:",
+    "@opentui/core": "catalog:",
+    "@opentui/solid": "catalog:",
     "solid-js": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "tsgo": "catalog:"
+    "@typescript/native-preview": "catalog:"
   }
 }
