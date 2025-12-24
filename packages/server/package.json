@@ -8,6 +8,7 @@
     "typecheck": "tsgo typecheck"
   },
   "dependencies": {
+    "@aus/agent": "workspace:*",
     "hono": "catalog:"
   },
   "devDependencies": {

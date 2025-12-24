@@ -7,6 +7,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ## 1. API BASE & ENDPOINTS
 
 ### Primary: Codex RPC (Local Process)
+
 - **Type**: JSON-RPC 2.0 over stdin/stdout pipes
 - **Binary**: `codex` CLI (launched with `-s read-only -a untrusted app-server`)
 - **Transport**: Process pipes (stdin/stdout), newline-delimited JSON
@@ -16,12 +17,14 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
   - `account/rateLimits/read` - Fetch rate limits & credits
 
 ### Fallback: Codex PTY Scrape
+
 - **Type**: TTY interactive mode
 - **Command**: `codex /status` (sent to PTY)
 - **Terminal Size**: 60-70 rows × 200-220 cols (with retry logic)
 - **Output**: Text parsing of status screen
 
 ### Optional: OpenAI Web Dashboard
+
 - **URL**: `https://chatgpt.com/codex/settings/usage`
 - **Type**: WebView scraping (uses browser cookies)
 - **Auth**: Safari/Chrome cookies (requires Full Disk Access on macOS)
@@ -31,6 +34,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ## 2. REQUIRED HEADERS / AUTH
 
 ### RPC (Process)
+
 - **No HTTP headers** - uses process pipes
 - **Environment Variables**:
   - `PATH` must include Node tooling and binary paths
@@ -38,6 +42,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 - **Session**: Codex binary handles internal auth via `~/.codex/auth.json`
 
 ### PTY (Fallback)
+
 - **No auth headers** - uses local binary
 - **Auth from**: `~/.codex/auth.json` (JWT-based, decoded from `tokens.idToken`)
 - **JWT Fields** (from `https://api.openai.com/auth` and `https://api.openai.com/profile` claims):
@@ -45,6 +50,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
   - `email` - Account email
 
 ### Web Dashboard
+
 - **Cookies**: Safari/Chrome persistent cookies for `chatgpt.com` and `openai.com`
 - **No Bearer tokens** - auth is session-based
 - **Requires**: User already logged into `chatgpt.com` in Safari/Chrome
@@ -54,6 +60,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ## 3. REQUEST METHOD / BODY / QUERY PARAMS
 
 ### RPC - Initialize
+
 ```json
 {
   "id": 1,
@@ -68,6 +75,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ```
 
 ### RPC - Fetch Account Details
+
 ```json
 {
   "id": 2,
@@ -75,7 +83,9 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
   "params": {}
 }
 ```
+
 **Response**:
+
 ```json
 {
   "id": 2,
@@ -91,6 +101,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ```
 
 ### RPC - Fetch Rate Limits & Credits
+
 ```json
 {
   "id": 3,
@@ -98,7 +109,9 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
   "params": {}
 }
 ```
+
 **Response Shape**:
+
 ```json
 {
   "id": 3,
@@ -125,11 +138,13 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ```
 
 ### PTY - Send `/status`
+
 - **Input**: Send string `/status\n` to PTY stdin
 - **Output**: ANSI-formatted status screen text
 - **Timeout**: 18s (retry with 24s timeout if parse fails)
 
 ### Web Dashboard
+
 - **URL**: `https://chatgpt.com/codex/settings/usage` (loaded in WebView)
 - **Method**: GET (SPA, no API calls)
 - **Auth**: Cookie-based (imported from browser)
@@ -139,6 +154,7 @@ Based on investigation of `steipete/codexbar`, here's the complete API spec for 
 ## 4. RESPONSE SHAPE
 
 ### RPC Rate Limits Response
+
 ```swift
 struct RPCRateLimitWindow {
   let usedPercent: Double       // 0-100
@@ -154,14 +170,18 @@ struct RPCCreditsSnapshot {
 ```
 
 ### PTY Status Parsing
+
 Regex patterns extracted from output:
+
 - **Credits**: `Credits:\s*([0-9][0-9.,]*)`
 - **5h Limit**: Line matching `5h limit[^\n]*` → extract percentage + reset text
 - **Weekly Limit**: Line matching `Weekly limit[^\n]*` → extract percentage + reset text
 - **Reset Format**: Relative text (e.g., "resets in 2h 30m") or absolute date
 
 ### Web Dashboard Scraping
+
 JavaScript extracts from DOM:
+
 - **Code Review Remaining**: Percentage from UI elements
 - **Credit Events**: Table rows with date/service/amount
 - **Usage Breakdown**: Daily breakdown JSON from SPA state
@@ -172,21 +192,25 @@ JavaScript extracts from DOM:
 ## 5. RATE LIMITING & CACHING BEHAVIOR
 
 ### Codex RPC
+
 - **Per-request serialization**: All RPC requests are serialized (no concurrent requests to avoid starving readers on single stdout pipe)
 - **No explicit rate limiting**: Process-based, runs locally
 - **Connection reuse**: Each fetch creates new process, runs batch queries, then terminates
 
 ### PTY
+
 - **Timeout**: 18s base, 24s on retry
 - **Retry logic**: If parse fails (e.g., timeout), retry once with larger PTY (70×220 rows)
 - **No caching**: Fresh fetch each time
 
 ### Web Dashboard
+
 - **WebView pooling**: Cached WebView instances per account email to avoid recreating browser context
 - **Polling timeout**: 60s max to load page (includes hydration wait for JS frameworks)
 - **No rate limiting**: Client-side scraping only
 
 ### Cache in `codexbar`
+
 - **Credits**: Cached when RPC unavailable (fallback retains last known balance)
 - **Account info**: Loaded synchronously from `~/.codex/auth.json` (JWT parse)
 
@@ -195,23 +219,28 @@ JavaScript extracts from DOM:
 ## 6. NORMALIZATION LOGIC
 
 ### Percentage Calculation
+
 ```
 used% = 100 - remaining%
 remaining% = 100 - used%
 ```
+
 - RPC: `usedPercent` is provided directly
 - PTY: Extract percentage from text, invert if needed
 
 ### Credits Parsing
+
 - RPC: String balance → `parseDouble(balance)`
 - PTY: Regex `Credits:\s*([0-9][0-9.,]*)` → parse with locale-aware number handling
 - Fallback: Keep cached value if unavailable
 
 ### Reset Time Conversion
+
 - RPC: `resetsAt` is Unix timestamp → convert to Date, format as relative string
 - PTY: Extract textual reset description directly from screen (e.g., "resets in 2h")
 
 ### Account Info
+
 - RPC: `account` object with `email` and `planType`
 - JWT (PTY fallback):
   - Extract from `https://api.openai.com/auth.chatgpt_plan_type` claim
@@ -275,4 +304,3 @@ remaining% = 100 - used%
   - [ ] Read `~/.codex/auth.json`
   - [ ] Decode JWT from `tokens.idToken`
   - [ ] Extract email & plan from JWT claims
-
