@@ -44,9 +44,37 @@ app.get("/api/account/:accountId/usage", async (c) => {
 
 export default app;
 
+const DEFAULT_PORT = 8787;
+
+const parsePortArg = (args: string[]): number | undefined => {
+  const flagIndex = args.findIndex((arg) => arg === "--port" || arg === "-p");
+  if (flagIndex !== -1) {
+    const value = args[flagIndex + 1];
+    if (value) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+    }
+  }
+
+  const inlineFlag = args.find((arg) => arg.startsWith("--port="));
+  if (inlineFlag) {
+    const value = inlineFlag.split("=")[1] ?? "";
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+};
+
 if (import.meta.main) {
-  const port = Number(Bun.env.PORT ?? 8787);
-  Bun.serve({ fetch: app.fetch, port });
+  const portArg = parsePortArg(Bun.argv);
+  const portEnv = Bun.env.PORT ? Number(Bun.env.PORT) : undefined;
+  const port = portArg ?? (Number.isFinite(portEnv) ? portEnv : undefined) ?? DEFAULT_PORT;
+  const server = Bun.serve({ fetch: app.fetch, port });
   // eslint-disable-next-line no-console
-  console.log(`Server listening on http://localhost:${port}`);
+  console.log(`Server listening on http://localhost:${server.port}`);
 }

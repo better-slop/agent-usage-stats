@@ -4,6 +4,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
+    "start": "bun --bun run src/index.ts",
     "lint": "tsgo lint",
     "typecheck": "tsgo typecheck"
   },

@@ -3,6 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "server": "bun --bun run --cwd packages/server start"
+  },
   "catalog": {
     "@types/bun": "latest",
     "typescript": "latest",
