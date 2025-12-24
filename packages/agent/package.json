@@ -10,5 +10,17 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "@typescript/native-preview": "catalog:"
+  },
+  "exports": {
+    "codex": {
+      "import": "./src/codex.ts",
+      "default": "./src/codex.ts",
+      "types": "./src/codex.ts"
+    },
+    "github-copilot": {
+      "import": "./src/github-copilot.ts",
+      "default": "./src/github-copilot.ts",
+      "types": "./src/github-copilot.ts"
+    }
   }
 }
