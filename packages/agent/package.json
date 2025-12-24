@@ -21,6 +21,16 @@
       "import": "./src/github-copilot.ts",
       "default": "./src/github-copilot.ts",
       "types": "./src/github-copilot.ts"
+    },
+    "claude-code": {
+      "import": "./src/claude-code.ts",
+      "default": "./src/claude-code.ts",
+      "types": "./src/claude-code.ts"
+    },
+    "transformer": {
+      "import": "./src/transformer.ts",
+      "default": "./src/transformer.ts",
+      "types": "./src/transformer.ts"
     }
   }
 }
