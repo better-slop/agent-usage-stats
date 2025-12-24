@@ -1,0 +1,19 @@
+{
+  "name": "@aus/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "lint": "tsgo lint",
+    "typecheck": "tsgo typecheck"
+  },
+  "dependencies": {
+    "yargs": "catalog:",
+    "opentui": "catalog:",
+    "solid-js": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "tsgo": "catalog:"
+  }
+}

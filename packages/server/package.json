@@ -1,0 +1,17 @@
+{
+  "name": "@aus/server",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "lint": "tsgo lint",
+    "typecheck": "tsgo typecheck"
+  },
+  "dependencies": {
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "tsgo": "catalog:"
+  }
+}

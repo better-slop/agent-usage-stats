@@ -3,11 +3,22 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "catalog": {
+    "@types/bun": "latest",
+    "typescript": "latest",
+    "tsgo": "latest",
+    "yargs": "latest",
+    "hono": "latest",
+    "opentui": "latest",
+    "solid-js": "latest"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:",
+    "tsgo": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   },
   "workspaces": [
     "packages/*",
