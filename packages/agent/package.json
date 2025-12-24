@@ -12,22 +12,27 @@
     "@typescript/native-preview": "catalog:"
   },
   "exports": {
-    "codex": {
+    ".": {
+      "import": "./src/index.ts",
+      "default": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./codex": {
       "import": "./src/codex.ts",
       "default": "./src/codex.ts",
       "types": "./src/codex.ts"
     },
-    "github-copilot": {
+    "./github-copilot": {
       "import": "./src/github-copilot.ts",
       "default": "./src/github-copilot.ts",
       "types": "./src/github-copilot.ts"
     },
-    "claude-code": {
+    "./claude-code": {
       "import": "./src/claude-code.ts",
       "default": "./src/claude-code.ts",
       "types": "./src/claude-code.ts"
     },
-    "transformer": {
+    "./transformer": {
       "import": "./src/transformer.ts",
       "default": "./src/transformer.ts",
       "types": "./src/transformer.ts"

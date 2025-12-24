@@ -47,6 +47,7 @@
       "name": "@aus/server",
       "version": "0.0.0",
       "dependencies": {
+        "@aus/agent": "workspace:*",
         "hono": "catalog:",
       },
       "devDependencies": {
