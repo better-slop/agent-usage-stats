@@ -26,8 +26,8 @@ const app = new Hono();
 app.get("/health", (c) => c.text("ok"));
 app.route("/rpc", rpcApp);
 
-app.get("/api/usage", async (c) => {
-  const type = (c.req.query("type") ?? "codex").toLowerCase();
+app.get("/api/usage/:type", async (c) => {
+  const type = c.req.param("type").toLowerCase();
   const email = c.req.query("email")?.trim() || undefined;
 
   if (!SUPPORTED_TYPES.has(type)) {

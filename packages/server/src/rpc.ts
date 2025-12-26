@@ -11,20 +11,27 @@ type CachedUsage = {
 
 type RpcUsageResponse = {
   ok: true;
+  type: string;
+  email?: string;
   lastUpdated: number;
   usage: AgentUsageSnapshot;
 };
 
 type RpcLastUpdatedResponse = {
   ok: true;
+  type: string;
+  email?: string;
   lastUpdated: number;
 };
 
 type RpcUsageError = {
   ok: false;
+  type: string;
+  email?: string;
   error: string;
 };
 
+const SUPPORTED_TYPES = new Set(["codex"]);
 const DEFAULT_CACHE_TTL_MS = 10_000;
 
 const parseCacheTtl = (): number => {
@@ -40,11 +47,10 @@ const parseCacheTtl = (): number => {
 };
 
 const cacheTtlMs = parseCacheTtl();
+const cache = new Map<string, CachedUsage>();
+const inFlight = new Map<string, Promise<CachedUsage>>();
 
-let cache: CachedUsage | undefined;
-let inFlight: Promise<CachedUsage> | undefined;
-
-const buildEtag = (timestamp: number): string => `W/"codex-${timestamp}"`;
+const buildEtag = (type: string, timestamp: number): string => `W/"${type}-${timestamp}"`;
 
 const isNotModified = (c: Context, entry: CachedUsage): boolean => {
   const ifNoneMatch = c.req.header("if-none-match");
@@ -70,72 +76,128 @@ const applyCacheHeaders = (c: Context, entry: CachedUsage): void => {
 
 const isFresh = (entry: CachedUsage, now: number): boolean => now - entry.lastUpdated < cacheTtlMs;
 
-const loadUsage = async (): Promise<CachedUsage> => {
+const loadUsage = async (type: string): Promise<CachedUsage> => {
   const now = Date.now();
-  if (cache && isFresh(cache, now)) {
-    return cache;
+  const cached = cache.get(type);
+  if (cached && isFresh(cached, now)) {
+    return cached;
   }
-  if (inFlight) {
-    return inFlight;
+  const pending = inFlight.get(type);
+  if (pending) {
+    return pending;
   }
 
-  inFlight = (async () => {
+  const fetchPromise = (async () => {
+    if (type !== "codex") {
+      throw new Error(`Unsupported usage type: ${type}`);
+    }
     const snapshot = await fetchCodexUsage();
     const usage = normalizeCodexUsage(snapshot);
     const lastUpdated = usage.fetchedAt;
     const entry: CachedUsage = {
       snapshot: usage,
-      etag: buildEtag(lastUpdated),
+      etag: buildEtag(type, lastUpdated),
       lastUpdated,
     };
-    cache = entry;
+    cache.set(type, entry);
     return entry;
   })().finally(() => {
-    inFlight = undefined;
+    inFlight.delete(type);
   });
 
-  return inFlight;
+  inFlight.set(type, fetchPromise);
+  return fetchPromise;
 };
 
 const rpcApp = new Hono();
 
-rpcApp.get("/usage", async (c) => {
+rpcApp.get("/usage/:type", async (c) => {
+  const type = c.req.param("type").toLowerCase();
+  const email = c.req.query("email")?.trim() || undefined;
+
+  if (!SUPPORTED_TYPES.has(type)) {
+    const payload: RpcUsageError = {
+      ok: false,
+      type,
+      email,
+      error: `Unsupported usage type: ${type}`,
+    };
+    return c.json(payload, 400);
+  }
+
   try {
-    const entry = await loadUsage();
+    const entry = await loadUsage(type);
     if (isNotModified(c, entry)) {
       return c.body(null, 304);
     }
     applyCacheHeaders(c, entry);
 
+    if (email && entry.snapshot.account?.email && entry.snapshot.account.email !== email) {
+      const payload: RpcUsageError = {
+        ok: false,
+        type,
+        email,
+        error: "No usage data for requested email.",
+      };
+      return c.json(payload, 404);
+    }
+
     const payload: RpcUsageResponse = {
       ok: true,
+      type,
+      email,
       lastUpdated: entry.lastUpdated,
       usage: entry.snapshot,
     };
     return c.json(payload);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    const payload: RpcUsageError = { ok: false, error: message };
+    const payload: RpcUsageError = { ok: false, type, email, error: message };
     return c.json(payload, 500);
   }
 });
 
-rpcApp.get("/last-updated", async (c) => {
+rpcApp.get("/last-updated/:type", async (c) => {
+  const type = c.req.param("type").toLowerCase();
+  const email = c.req.query("email")?.trim() || undefined;
+
+  if (!SUPPORTED_TYPES.has(type)) {
+    const payload: RpcUsageError = {
+      ok: false,
+      type,
+      email,
+      error: `Unsupported usage type: ${type}`,
+    };
+    return c.json(payload, 400);
+  }
+
   try {
-    const entry = await loadUsage();
+    const entry = await loadUsage(type);
     if (isNotModified(c, entry)) {
       return c.body(null, 304);
     }
     applyCacheHeaders(c, entry);
 
+    if (email && entry.snapshot.account?.email && entry.snapshot.account.email !== email) {
+      const payload: RpcUsageError = {
+        ok: false,
+        type,
+        email,
+        error: "No usage data for requested email.",
+      };
+      return c.json(payload, 404);
+    }
+
     const payload: RpcLastUpdatedResponse = {
       ok: true,
+      type,
+      email,
       lastUpdated: entry.lastUpdated,
     };
     return c.json(payload);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    const payload: RpcUsageError = { ok: false, error: message };
+    const payload: RpcUsageError = { ok: false, type, email, error: message };
     return c.json(payload, 500);
   }
 });
