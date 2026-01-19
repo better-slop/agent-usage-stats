@@ -1,15 +1,10 @@
 # agent-usage-stats
 
-To install dependencies:
+![Major WIP]
 
-```bash
-bun install
-```
+Based on [codexbar](https://github.com/steipete/codexbar).
 
-To run:
-
-```bash
-bun run index.ts
-```
+Status:
+- only codex is implemented iirc
 
 This project was created using `bun init` in bun v1.3.5. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
